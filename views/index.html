@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html><head>
+
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+</head>
+    <body>
+        <div class="container mt-5">
+            <h2>Expense Tracker</h2>
+            <form id="expenseForm" onsubmit="handleFormSubmit(event)">
+              <div class="form-group">
+                <label for="description">Description:</label>
+                <input type="text" class="form-control" id="description" required>
+              </div>
+              <div class="form-group">
+                <label for="amount">Amount:</label>
+                <input type="number" class="form-control" id="amount" required>
+              </div>
+              <div class="form-group">
+                <label for="category">Category:</label>
+                <select class="form-control" id="category" required>
+                <option selected>Choose...</option>
+                  <option value="Food">Food</option>
+                  <option value="Transportation">Transportation</option>
+                  <option value="Entertainment">Movies</option>
+                  <option value="Utilities">Fule</option>
+                  <option value="Others">Others</option>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-primary">Add Expense</button>
+            </form>
+        
+            <ul id="expenseList" class="mt-4"></ul>
+          </div>
+          
+          <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+          <script>
+         window.onload = function() {
+            
+            fetchExpenses();
+        };
+        function fetchExpenses() {
+            axios.get('/api/expenses')
+                .then(response => {
+                    response.data.forEach(expense => showExpense(expense));
+                })
+                .catch(error => {
+                    console.error('Error fetching expenses:', error);
+                });
+        }
+
+            //On from submit
+      async  function handleFormSubmit(event) {
+    event.preventDefault();
+    const description=document.getElementById('description').value;
+    const amount=document.getElementById('amount').value;
+    const category=document.getElementById('category').value;
+    const expense={description,amount,category};
+    
+        axios.post('/api/expenses',expense)
+        .then(response=>{
+          showExpense(response.data);
+          document.getElementById('expenseForm').reset();
+
+        }).catch(error=>{
+          console.error('error adding expense:',error);
+        });
+
+}
+// showing as list
+function showExpense(my_obj){
+    const m=document.createElement('li');
+    const del = document.createElement('button');
+    del.textContent='Delete';
+            del.textContent = 'Delete';
+            del.style.marginLeft = '5px'; // Add style for spacing
+            del.style.padding = '5px 10px'; // Add style for padding
+            del.style.border = '1px solid #ccc'; // Add style for border
+            del.style.backgroundColor = '#e26969'; // Add style for background color
+            del.style.cursor = 'pointer'; // Add style for cursor
+    const edit=document.createElement('button')
+   edit.textContent = 'Edit';
+           edit.style.marginLeft = '5px'; // Add style for spacing
+           edit.style.padding = '5px 10px'; // Add style for padding
+           edit.style.border = '1px solid #ccc'; // Add style for border
+           edit.style.backgroundColor = '#90ee90'; // Add style for background color
+           edit.style.cursor = 'pointer'; // Add style for cursor
+   const n=document.querySelector('ul');
+   m.textContent = 'Amount ' + my_obj.amount + ' is used for ' + my_obj.description + ' on category of ' + my_obj.category;   m.appendChild(del);
+   m.appendChild(edit)
+   n.appendChild(m);
+   del.addEventListener('click',function(event){//delete
+    deleteExpense(my_obj.id, li);
+    })
+    edit.addEventListener('click',function(event){//edit
+      editExpense(my_obj);
+    })
+  } 
+      
+  function deleteExpense(id, li) {
+            axios.delete(`/api/expenses/${id}`)
+                .then(() => {
+                    li.remove();
+                })
+                .catch(error => {
+                    console.error('Error deleting expense:', error);
+                });
+        }
+        function editExpense(expense) {
+            document.getElementById('description').value = expense.description;
+            document.getElementById('amount').value = expense.amount;
+            document.getElementById('category').value = expense.category;
+
+            document.getElementById('expenseForm').onsubmit = (event) => {
+                event.preventDefault();
+                const updatedExpense = {
+                    description: document.getElementById('description').value,
+                    amount: document.getElementById('amount').value,
+                    category: document.getElementById('category').value,
+                };
+
+                axios.put(`/api/expenses/${expense.id}`, updatedExpense)
+                    .then(() => {
+                        // Refresh the expense list after editing
+                        document.getElementById('expenseList').innerHTML = ''; // Clear the list
+                        fetchExpenses(); // Re-fetch expenses to update the list
+                        document.getElementById('expenseForm').reset();
+                    })
+                    .catch(error => {
+                        console.error('Error updating expense:', error);
+                    });
+            };
+        }
+
+
+          </script>
+    </body>
+</html>
